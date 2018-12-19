@@ -1,138 +1,94 @@
 import React from 'react';
-import { Heading, Text } from 'rebass';
+import { Box, Image, Flex } from 'rebass';
 import { StaticQuery, graphql } from 'gatsby';
 import styled from 'styled-components';
+import ReactMarkdown from 'react-markdown';
 import Fade from 'react-reveal/Fade';
 import Section from '../components/Section';
-import { CardContainer, Card } from '../components/Card';
 import Triangle from '../components/Triangle';
-import ImageSubtitle from '../components/ImageSubtitle';
+import markdownRenderer from '../components/MarkdownRenderer';
 
 const Background = () => (
   <div>
     <Triangle
-      color="backgroundDark"
-      height={['15vh', '10vh']}
-      width={['100vw', '100vw']}
-      invertX
-    />
-
-    <Triangle
-      color="secondary"
-      height={['50vh', '40vh']}
-      width={['70vw', '40vw']}
+      color="secondaryLight"
+      height={['50vh', '20vh']}
+      width={['50vw', '50vw']}
       invertY
     />
 
     <Triangle
       color="primaryDark"
-      height={['40vh', '15vh']}
-      width={['100vw', '100vw']}
+      height={['20vh', '40vh']}
+      width={['75vw', '70vw']}
       invertX
-      invertY
+    />
+
+    <Triangle
+      color="backgroundDark"
+      height={['25vh', '20vh']}
+      width={['100vw', '100vw']}
     />
   </div>
 );
 
-const CoverImage = styled.img`
-  width: 100%;
-  object-fit: cover;
+const ProfilePicture = styled(Image)`
+  border-radius: 50%;
+  transition: all 0.25s ease-out;
+
+  &:hover {
+    border-radius: 20%;
+  }
 `;
-
-const EllipsisHeading = styled(Heading)`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-inline-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  border-bottom: ${props => props.theme.colors.primary} 5px solid;
-`;
-
-const Post = ({ title, text, image, url, date, time }) => {
-  const timestamp = `${date} - ${Math.ceil(time)} min`;
-  return (
-    <Card
-      onClick={() => window.open(url, '_blank')}
-      css={{ cursor: 'pointer' }}
-      p={0}
-    >
-      <EllipsisHeading m={3} p={1}>
-        {title}
-      </EllipsisHeading>
-      {image && <CoverImage src={image} height="200px" alt={title} />}
-      <Text m={3}>{text}</Text>
-      <ImageSubtitle bg="primaryLight" color="white">
-        {timestamp}
-      </ImageSubtitle>
-    </Card>
-  );
-};
-
-const parsePost = postFromGraphql => {
-  const MEDIUM_CDN = 'https://cdn-images-1.medium.com/max/400';
-  const MEDIUM_URL = 'https://medium.com';
-  const {
-    id,
-    uniqueSlug,
-    createdAt,
-    title,
-    virtuals,
-    author,
-  } = postFromGraphql;
-  const image =
-    virtuals.previewImage.imageId &&
-    `${MEDIUM_CDN}/${virtuals.previewImage.imageId}`;
-  return {
-    id,
-    title,
-    time: virtuals.readingTime,
-    date: createdAt,
-    text: virtuals.subtitle,
-    image,
-    url: `${MEDIUM_URL}/${author.username}/${uniqueSlug}`,
-  };
-};
-
-const edgeToArray = data => data.edges.map(edge => edge.node);
 
 const Services = () => (
-  <Section.Container id="Services" Background={Background}>
-    <Section.Header name="Services" icon="✍️" label="services" />
+  <Section.Container id="about" Background={Background}>
+    <Section.Header name="About me" icon="🙋‍♂️" label="person" />
     <StaticQuery
       query={graphql`
-        query MediumPostQuery {
-          allMediumPost(limit: 6, sort: { fields: createdAt, order: DESC }) {
-            edges {
-              node {
-                id
-                uniqueSlug
-                title
-                createdAt(formatString: "MMM YYYY")
-                virtuals {
-                  subtitle
-                  readingTime
-                  previewImage {
-                    imageId
-                  }
-                }
-                author {
-                  username
-                }
+        query AboutServicesQuery {
+          contentfulAbout {
+            aboutMe {
+              childMarkdownRemark {
+                rawMarkdownBody
+              }
+            }
+            profile {
+              title
+              image: resize(width: 450, quality: 100) {
+                src
               }
             }
           }
         }
       `}
-      render={({ allMediumPost }) => {
-        const posts = edgeToArray(allMediumPost).map(parsePost);
+      render={data => {
+        const { aboutMe, profile } = data.contentfulAbout;
         return (
-          <CardContainer minWidth="300px">
-            {posts.map(p => (
+          <Flex justifyContent="center" alignItems="center" flexWrap="wrap">
+            <Box width={[1, 1, 4 / 6]} px={[1, 2, 4]}>
               <Fade bottom>
-                <Post key={p.id} {...p} />
+                <ReactMarkdown
+                  source={aboutMe.childMarkdownRemark.rawMarkdownBody}
+                  renderers={markdownRenderer}
+                />
               </Fade>
-            ))}
-          </CardContainer>
+            </Box>
+
+            <Box
+              width={[1, 1, 2 / 6]}
+              css={{ maxWidth: '300px', margin: 'auto' }}
+            >
+              <Fade right>
+                <ProfilePicture
+                  src={profile.image.src}
+                  alt={profile.title}
+                  mt={[4, 4, 0]}
+                  ml={[0, 0, 1]}
+                />
+              </Fade>
+            </Box>
+          </Flex>
         );
       }}
     />
